@@ -8,13 +8,18 @@ import (
 	"insider/configs"
 	"insider/database"
 	"insider/graceful_shutdown"
+	"insider/message"
 	"net/http"
 )
 
 var httpServer *http.Server
 
 func StartServer() {
-	serverConfig := configs.Instance().GetServer()
+	database.Configure()
+
+	serverConfig := configs.
+		Instance().
+		GetServer()
 
 	port := fmt.Sprintf(":%d", serverConfig.GetPort())
 
@@ -23,7 +28,7 @@ func StartServer() {
 
 	httpServer = &http.Server{
 		Addr:    port,
-		Handler: buildRouter(),
+		Handler: buildRouters(),
 	}
 
 	graceful_shutdown.AddShutdownHook(func() {
@@ -38,10 +43,11 @@ func StartServer() {
 	}
 }
 
-func buildRouter() *chi.Mux {
+func buildRouters() *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.Heartbeat("/health"))
 
-	database.Configure()
+	message.Configure(r)
+
 	return r
 }

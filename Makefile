@@ -6,13 +6,13 @@ clean-env:
 env:
 	@ find . -type f -name ".env.example" -exec sh -c '[ -e "$${1%.example}" ] || cp -v "$${1%}" "$${1%.example}"' _ {} \;
 
-create-migration:
+create-migration: env
 	docker compose run --rm --user "$(shell id -u):$(shell id -g)" app "database/scripts/create_migration.sh $(name)"
 
-migrate:
+migrate: env
 	docker compose run --rm app "sleep 3 && database/scripts/migrate.sh"
 
-rollback:
+rollback: env
 	docker compose run --rm app 'sleep 3 && database/scripts/rollback.sh ${countOfRollbackVersions:-1}'
 
 
