@@ -1,0 +1,15 @@
+server:
+  port: {{ default .SERVER_PORT 8080 }}
+
+database:
+  host: {{ default .DATABASE_HOST "localhost" }}
+  port: {{ default .DATABASE_PORT 5432 }}
+  name: {{ default .DATABASE_NAME "insider" }}
+  username: {{ default .DATABASE_USERNAME "postgres" }}
+  password: {{ default .DATABASE_PASSWORD "postgres" }}
+  logLevel: 4
+  pool:
+    maxIdleConnections: {{ default .DATABASE_MAX_IDLE_CONNECTIONS 5 }}
+    maxOpenConnections: {{ default .DATABASE_MAX_OPEN_CONNECTIONS 100 }}
+    connectionMaxLifetime: {{ default .DATABASE_CONNECTION_MAX_LIFETIME 60000 }}
+    connectionMaxIdleTime: {{ default .DATABASE_CONNECTION_MAX_IDLE_TIME 1000 }}

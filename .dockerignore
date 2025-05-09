@@ -1,0 +1,12 @@
+.dockerignore
+.git
+.gitignore
+.editorconfig
+docker-compose.*
+Dockerfile
+README.md
+vendor/
+.idea
+.env
+var.env
+.env.example
