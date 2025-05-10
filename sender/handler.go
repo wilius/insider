@@ -2,16 +2,15 @@ package sender
 
 import (
 	"github.com/rs/zerolog/log"
-	"github.com/wagslane/go-rabbitmq"
 	"insider/configs"
-	"insider/event_bus"
+	"insider/database"
 	"insider/message"
 	"insider/provider"
 	"time"
 )
 
-func runner(publisher *rabbitmq.Publisher) {
-	doRun(publisher) // Run the task immediately
+func runner() {
+	doRun() // Run the task immediately
 	ticker := time.NewTicker(instance.interval)
 	defer ticker.Stop()
 
@@ -19,7 +18,7 @@ func runner(publisher *rabbitmq.Publisher) {
 		select {
 		case <-ticker.C:
 			ticker.Stop()
-			doRun(publisher)
+			doRun()
 			ticker.Reset(instance.interval)
 		case <-instance.stop:
 			log.Info().
@@ -29,39 +28,63 @@ func runner(publisher *rabbitmq.Publisher) {
 	}
 }
 
-func doRun(publisher *rabbitmq.Publisher) {
+func doRun() {
 	log.Info().
 		Msg("Running scheduler")
 
+	itemsToSend, err := fetchMessages()
+	if err != nil {
+		return
+	}
+
+	for _, item := range *itemsToSend {
+		doSendMessage(&item)
+	}
+}
+
+func fetchMessages() (*[]message.DTO, error) {
+	tx := database.Instance().Begin()
 	count := configs.Instance().
 		GetScheduler().
 		GetItemCountPerCycle()
 
-	messageProvider := provider.Instance()
-
-	// begin here and don't forget to add skip locked keyword into the downstream sql query
-	items, err := messageService.Fetch(count)
+	items, err := messageService.Fetch(tx, count)
 	if err != nil {
 		log.Err(err).
 			Msg("Error while fetching items")
-		return
+		return nil, err
 	}
 
+	itemsToSend := make([]message.DTO, 0)
 	for _, item := range *items {
-		event_bus.PublishEvent(publisher, &eventDto{Id: item.ID}, "", "delayed_message")
-	}
-	// commit here
+		err = publisher.PublishEvent(
+			&eventDto{Id: item.ID},
+			"delayed_message",
+		)
 
-	for _, item := range *items {
-		doSendMessage(&item, messageProvider)
+		if err != nil {
+			log.Err(err).
+				Msg("Error while publishing event")
+			err = messageService.MarkAsCreated(item.ID)
+			if err != nil {
+				log.Err(err).
+					Msg("Error while marking as created")
+			}
+		} else {
+			itemsToSend = append(itemsToSend, item)
+		}
 	}
+	tx.Commit()
+	return &itemsToSend, nil
 }
 
-func doSendMessage(item *message.DTO, messageProvider provider.Provider) {
+func doSendMessage(item *message.DTO) {
 	log.Info().
 		Msgf("Sending message to %s with content %s with id %d", item.PhoneNumber, item.Message, item.ID)
 
 	inputItem := mapTo(item)
+
+	messageProvider := provider.Instance()
 
 	response, err := messageProvider.Send(inputItem)
 	if err != nil {

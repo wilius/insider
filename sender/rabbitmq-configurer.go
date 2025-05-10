@@ -2,33 +2,33 @@ package sender
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/rs/zerolog/log"
 	"github.com/streadway/amqp"
 	"github.com/wagslane/go-rabbitmq"
-	"insider/event_bus"
+	error2 "insider/error"
+	rabbitInternal "insider/rabbitmq"
 )
 
-func configureRabbitMQ() *rabbitmq.Publisher {
+func configureRabbitMQ() {
 	declareDelayedMessageQueue()
 	configureMessageStatusCheckerConsumer()
-	return configurePublisher()
-
+	configurePublisher()
 }
 
-func configurePublisher() *rabbitmq.Publisher {
-	eventPublisher, err := event_bus.NewPublisher()
+func configurePublisher() {
+	var err error
+	publisher, err = rabbitInternal.NewPublisher("")
 
 	if err != nil {
 		log.Fatal().
 			Err(err).
 			Msg("Unexpected exception while trying to configure publisher")
 	}
-
-	return eventPublisher
 }
 
 func declareDelayedMessageQueue() {
-	err := event_bus.DeclareQueue(
+	err := rabbitInternal.DeclareQueue(
 		"delayed_message",
 		true, false, false, false,
 		amqp.Table{
@@ -46,7 +46,7 @@ func declareDelayedMessageQueue() {
 }
 
 func configureMessageStatusCheckerConsumer() {
-	consumer, err := event_bus.NewConsumer(
+	consumer, err := rabbitInternal.NewConsumer(
 		"message.checker",
 		rabbitmq.WithConsumerOptionsConcurrency(1),
 		rabbitmq.WithConsumerOptionsQueueDurable,
@@ -71,7 +71,10 @@ func listenChanges(consumer *rabbitmq.Consumer) {
 		err := doHandleCheckingMessage(&event)
 
 		if err != nil {
-			return rabbitmq.NackRequeue
+			var casted error2.ResourceNotFound
+			if !errors.As(err, &casted) {
+				return rabbitmq.NackRequeue
+			}
 		}
 
 		return rabbitmq.Ack

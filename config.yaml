@@ -21,6 +21,10 @@ rabbitmq:
   username: {{ default .RABBITMQ_USERNAME "guest" }}
   password: {{ default .RABBITMQ_PASSWORD "guest" }}
 
+redis:
+  host: {{ default .REDIS_HOST "localhost" }}
+  port: {{ default .REDIS_PORT 6379 }}
+
 scheduler:
   interval: {{ default .SCHEDULER_INTERVAL "10s" }}
   itemCountPerCycle: {{ default .SCHEDULER_ITEM_COUNT_PER_CYCLE 2 }}

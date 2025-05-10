@@ -6,6 +6,7 @@ require (
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-chi/render v1.0.3
 	github.com/go-playground/validator/v10 v10.26.0
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/go-viper/mapstructure/v2 v2.2.1
 	github.com/lib/pq v1.10.9
 	github.com/rs/zerolog v1.33.0
@@ -19,6 +20,8 @@ require (
 
 require (
 	github.com/ajg/form v1.5.1 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect

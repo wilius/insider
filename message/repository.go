@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"insider/constants"
+	error2 "insider/error"
 	"insider/types"
 )
 
@@ -59,10 +60,10 @@ func (r *repository) List(ctx context.Context, filter *Filter) (*types.Pageable,
 	return types.MapToPageable(items, &filter.PagedFilter), nil
 }
 
-func (r *repository) FetchForSending(count uint) (*[]entity, error) {
+func (r *repository) FetchForSending(tx *gorm.DB, count uint) (*[]entity, error) {
 	var items *[]entity
 
-	result := r.db.
+	result := tx.
 		Raw(`
            UPDATE notifications.message
 			SET status = @upToDateStatus,
@@ -73,6 +74,7 @@ func (r *repository) FetchForSending(count uint) (*[]entity, error) {
 				WHERE status = @currentStatus
 				ORDER BY create_date
 				LIMIT @fetchCount
+    			FOR UPDATE SKIP LOCKED
 			)
 			RETURNING *;
         `, map[string]interface{}{
@@ -107,7 +109,7 @@ func (r *repository) update(
 	}
 
 	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
+		return error2.NewResourceNotFound("No record found to update")
 	}
 
 	return nil

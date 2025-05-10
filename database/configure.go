@@ -34,10 +34,6 @@ func (d *customDriver) Open(name string) (driver.Conn, error) {
 }
 
 func Instance() *gorm.DB {
-	return instance
-}
-
-func Configure() {
 	connectionOnce.Do(func() {
 		databaseConfig := configs.Instance().GetDatabase()
 		dbDSN := fmt.Sprintf(
@@ -86,4 +82,6 @@ func Configure() {
 
 		instance = connection
 	})
+
+	return instance
 }
