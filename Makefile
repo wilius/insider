@@ -13,7 +13,7 @@ migrate: env
 	docker compose run --rm app "sleep 3 && database/scripts/migrate.sh"
 
 rollback: env
-	docker compose run --rm app 'sleep 3 && database/scripts/rollback.sh ${countOfRollbackVersions:-1}'
+	docker compose run --rm app "sleep 3 && database/scripts/rollback.sh $(count)"
 
 
 build: env

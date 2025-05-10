@@ -11,7 +11,7 @@ type entity struct {
 	Message     string        `gorm:"column:message;not null"`
 	Status      messageStatus `gorm:"column:status;not null"`
 	CreateDate  time.Time     `gorm:"column:create_date;not null"`
-	UpdateDate  time.Time     `gorm:"column:update_date;not null"`
+	UpdateDate  *time.Time    `gorm:"column:update_date;not null"`
 }
 
 func (*entity) TableName() string {
@@ -25,6 +25,8 @@ func (c *entity) BeforeCreate(tx *gorm.DB) (err error) {
 		return err
 	}
 	c.ID = nextID
+	now := time.Now().UTC()
+	c.CreateDate = now
 	return nil
 }
 

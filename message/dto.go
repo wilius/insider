@@ -20,8 +20,8 @@ var dtoStatus = struct {
 }
 
 type createRequest struct {
-	PhoneNumber string `json:"name" validate:"required,e164"`
-	Message     string `json:"title" validate:"required,min=1,max=120"`
+	PhoneNumber string `json:"phoneNumber" validate:"required,e164"`
+	Message     string `json:"message" validate:"required,min=1,max=120"`
 }
 
 func (s *createRequest) Bind(_ *http.Request) error {
@@ -29,10 +29,10 @@ func (s *createRequest) Bind(_ *http.Request) error {
 }
 
 type Dto struct {
-	ID          *types.EntityId `json:"id"`
-	PhoneNumber string          `json:"phoneNumber"`
-	Message     string          `json:"message"`
-	Status      messageStatus   `json:"status"`
-	CreateDate  time.Time       `json:"createDate"`
-	UpdateDate  time.Time       `json:"updateDate"`
+	ID          types.EntityId `json:"id"`
+	PhoneNumber string         `json:"phoneNumber"`
+	Message     string         `json:"message"`
+	Status      messageStatus  `json:"status"`
+	CreateDate  time.Time      `json:"createDate"`
+	UpdateDate  *time.Time     `json:"updateDate"`
 }

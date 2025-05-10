@@ -14,7 +14,7 @@ func mapToDTO(item *entity) (*Dto, error) {
 	}
 
 	d := &Dto{
-		ID: &types.EntityId{
+		ID: types.EntityId{
 			Id: item.ID,
 		},
 		PhoneNumber: item.PhoneNumber,

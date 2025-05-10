@@ -14,6 +14,6 @@ func Configure(mux *chi.Mux) {
 		),
 	)
 
-	mux.Get("/message", handler.List)
-	mux.Post("/message", handler.Create)
+	mux.Get("/messages", handler.List)
+	mux.Post("/messages", handler.Create)
 }

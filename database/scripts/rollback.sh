@@ -1,4 +1,4 @@
-echo "Rolling back migration on: ${DATABASE_HOST}:${DATABASE_PORT} to $1 version lower"
-migrate -path ./database/migrations \
-  -database "postgresql://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}?sslmode=disable"\
-  down $1
+connectionString="postgresql://${DATABASE_USERNAME}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_NAME}?sslmode=disable"
+count=${1:-1}
+echo "Rolling back to $count version lower on connectionString ${connectionString}"
+migrate -path ./database/migrations -database "$connectionString" down $count
