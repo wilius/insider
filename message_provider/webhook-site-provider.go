@@ -3,26 +3,25 @@ package message_provider
 import (
 	"errors"
 	"fmt"
+	"github.com/sony/gobreaker"
+	"insider/configs"
 	"io/ioutil"
 	"net/http"
-	"time"
-
-	"github.com/sony/gobreaker"
 )
 
-func newWebhookSiteProvider() Provider {
+func newWebhookSiteProvider(config configs.WebhookSiteConfig) Provider {
 	client := &http.Client{
-		Timeout: 10 * time.Second,
+		Timeout: config.GetRequestTimeout(),
 	}
 
-	// Configure Circuit Breaker
+	breakerConfig := config.GetCircuitBreakerConfig()
 	settings := gobreaker.Settings{
 		Name:        "HTTP Client Circuit Breaker",
-		MaxRequests: 3,
-		Interval:    60 * time.Second,
-		Timeout:     5 * time.Second,
+		MaxRequests: breakerConfig.GetMaxRequests(),
+		Interval:    breakerConfig.GetInterval(), //60 * time.Second
+		Timeout:     breakerConfig.GetTimeout(),
 		ReadyToTrip: func(counts gobreaker.Counts) bool {
-			return counts.ConsecutiveFailures > 5
+			return counts.ConsecutiveFailures > breakerConfig.GetMaxFailure()
 		},
 		OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) {
 			fmt.Printf("[Circuit Breaker] State change: %s → %s\n", from.String(), to.String())
@@ -31,12 +30,14 @@ func newWebhookSiteProvider() Provider {
 
 	cb := gobreaker.NewCircuitBreaker(settings)
 	return &senderImp{
+		config:         config,
 		client:         client,
 		circuitBreaker: cb,
 	}
 }
 
 type senderImp struct {
+	config         configs.WebhookSiteConfig
 	client         *http.Client
 	circuitBreaker *gobreaker.CircuitBreaker
 }
@@ -47,8 +48,7 @@ func (s *senderImp) Send(input *SendMessageInput) (*SendMessageOutput, error) {
 	}
 
 	_, err := s.circuitBreaker.Execute(func() (interface{}, error) {
-		// TODO read url from the config
-		req, err := http.NewRequest("GET", "url", nil)
+		req, err := http.NewRequest("GET", s.config.GetUrl(), nil)
 		if err != nil {
 			return nil, err
 		}

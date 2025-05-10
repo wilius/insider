@@ -9,6 +9,7 @@ import (
 	"insider/database"
 	"insider/graceful_shutdown"
 	"insider/message"
+	"insider/message_provider"
 	"net/http"
 )
 
@@ -47,6 +48,8 @@ func buildRouters() *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(chiMiddleware.Heartbeat("/health"))
 
+	// TODO remove
+	message_provider.Instance()
 	message.Configure(r)
 
 	return r

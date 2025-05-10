@@ -3,10 +3,13 @@ package configs
 import (
 	"bytes"
 	"fmt"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/spf13/viper"
 	"os"
+	"reflect"
 	"strings"
 	"text/template"
+	"time"
 )
 
 var instance Config
@@ -20,7 +23,21 @@ func init() {
 	}
 
 	var config configImp
-	if err := viper.Unmarshal(&config); err != nil {
+	decoderConfig := &mapstructure.DecoderConfig{
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			stringToDurationHook(),
+		),
+		Result:           &config,
+		TagName:          "mapstructure",
+		WeaklyTypedInput: true,
+	}
+
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
+	if err != nil {
+		panic(fmt.Errorf("failed to create decoder: %w", err))
+	}
+
+	if err := decoder.Decode(viper.AllSettings()); err != nil {
 		panic(fmt.Errorf("unable to decode into struct: %w", err))
 	}
 
@@ -84,4 +101,18 @@ func loadEnvVars() map[string]string {
 		}
 	}
 	return envMap
+}
+
+func stringToDurationHook() mapstructure.DecodeHookFuncType {
+	return func(
+		from reflect.Type,
+		to reflect.Type,
+		data interface{},
+	) (interface{}, error) {
+		if from.Kind() == reflect.String && to == reflect.TypeOf(time.Duration(0)) {
+			// Try to parse the string as time.Duration
+			return time.ParseDuration(data.(string))
+		}
+		return data, nil
+	}
 }

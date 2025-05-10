@@ -1,23 +1,25 @@
 package message_provider
 
-/*func providerFactory(data map[string]interface{}) (interface{}, error) {
-	// Decode the base config to identify the type
-	var base configs.ProviderConfig
-	if err := mapstructure.Decode(data, &base); err != nil {
-		return nil, err
-	}
+import (
+	"errors"
+	"insider/configs"
+	"insider/constants"
+)
 
-	// Determine the type and decode to the correct struct
-	switch base.Type {
-	case WebhookSite:
-		var config configs.webhookSiteConfigImp
-		if err := mapstructure.Decode(data, &config); err != nil {
-			return nil, err
-		}
-		return config, nil
+var instance Provider
 
+func Instance() Provider {
+	return instance
+}
+
+func init() {
+	providerConfig := configs.Instance().
+		GetProviderConfig()
+
+	switch providerConfig.GetType() {
+	case constants.WebhookSite:
+		instance = newWebhookSiteProvider(providerConfig.(configs.WebhookSiteConfig))
 	default:
-		return nil, fmt.Errorf("unknown provider type: %s", base.Type)
+		panic(errors.New("couldn't find any matching provider"))
 	}
 }
-*/

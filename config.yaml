@@ -17,3 +17,9 @@ database:
 provider:
   type: webhook.site
   url: "https://webhook.site/ffb81b98-c811-4959-891a-490da0b916c1"
+  requestTimeout: 5s
+  circuitBreaker:
+    maxRequests: 5
+    maxFailure: 5
+    interval: 60s
+    timeout: 5s

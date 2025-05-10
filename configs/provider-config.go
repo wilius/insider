@@ -3,19 +3,19 @@ package configs
 import (
 	"fmt"
 	"github.com/go-viper/mapstructure/v2"
-	"insider/message_provider"
+	"insider/constants"
 	"insider/util"
 )
 
 type ProviderConfig interface {
-	GetType() message_provider.ProviderType
+	GetType() constants.ProviderType
 }
 
 type providerConfigImp struct {
-	Type message_provider.ProviderType `mapstructure:"type" validate:"required"`
+	Type constants.ProviderType `mapstructure:"type" validate:"required"`
 }
 
-func (p providerConfigImp) GetType() message_provider.ProviderType {
+func (p providerConfigImp) GetType() constants.ProviderType {
 	return p.Type
 }
 
@@ -31,7 +31,21 @@ func providerConfigFactory(data *map[string]interface{}) (ProviderConfig, error)
 		return nil, err
 	}
 
-	if err = mapstructure.Decode(*data, &provider); err != nil {
+	decoderConfig := &mapstructure.DecoderConfig{
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			stringToDurationHook(),
+		),
+		Result:           &provider,
+		TagName:          "mapstructure",
+		WeaklyTypedInput: true, // Allow Viper to cast
+	}
+
+	decoder, err := mapstructure.NewDecoder(decoderConfig)
+	if err != nil {
+		panic(fmt.Errorf("failed to create decoder: %w", err))
+	}
+
+	if err = decoder.Decode(*data); err != nil {
 		return nil, err
 	}
 
@@ -43,9 +57,9 @@ func providerConfigFactory(data *map[string]interface{}) (ProviderConfig, error)
 	return provider, nil
 }
 
-func getProviderConfig(providerType message_provider.ProviderType) (ProviderConfig, error) {
+func getProviderConfig(providerType constants.ProviderType) (ProviderConfig, error) {
 	switch providerType {
-	case message_provider.WebhookSite:
+	case constants.WebhookSite:
 		return webhookSiteConfigImp{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported provider type: %s", providerType)
