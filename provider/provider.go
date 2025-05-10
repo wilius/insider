@@ -1,6 +1,9 @@
 package provider
 
+import "insider/constants"
+
 type Provider interface {
+	Type() constants.ProviderType
 	Send(input *SendMessageInput) (*SendMessageOutput, error)
 }
 

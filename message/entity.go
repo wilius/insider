@@ -7,12 +7,14 @@ import (
 )
 
 type entity struct {
-	ID          int64                   `gorm:"primaryKey;column:id"`
-	PhoneNumber string                  `gorm:"column:phone_number;not null"`
-	Message     string                  `gorm:"column:message;not null"`
-	Status      constants.MessageStatus `gorm:"column:status;not null"`
-	CreateDate  time.Time               `gorm:"column:create_date;not null"`
-	UpdateDate  *time.Time              `gorm:"column:update_date;not null"`
+	ID                int64                   `gorm:"primaryKey;column:id"`
+	PhoneNumber       string                  `gorm:"column:phone_number;not null"`
+	Message           string                  `gorm:"column:message;not null"`
+	Status            constants.MessageStatus `gorm:"column:status;not null"`
+	ProviderMessageID *string                 `gorm:"column:provider_message_id"`
+	Provider          *string                 `gorm:"column:provider"`
+	CreateDate        time.Time               `gorm:"column:create_date;not null"`
+	UpdateDate        *time.Time              `gorm:"column:update_date;not null"`
 }
 
 func (*entity) TableName() string {

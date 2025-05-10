@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/sony/gobreaker"
 	"insider/configs"
+	"insider/constants"
 	"io"
 	"net/http"
 )
@@ -51,6 +52,10 @@ type senderImp struct {
 	config         configs.WebhookSiteConfig
 	client         *http.Client
 	circuitBreaker *gobreaker.CircuitBreaker
+}
+
+func (s *senderImp) Type() constants.ProviderType {
+	return constants.WebhookSite
 }
 
 func (s *senderImp) Send(input *SendMessageInput) (*SendMessageOutput, error) {

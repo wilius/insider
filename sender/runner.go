@@ -1,7 +1,6 @@
 package sender
 
 import (
-	"context"
 	"github.com/rs/zerolog/log"
 	"insider/configs"
 	"insider/provider"
@@ -35,7 +34,7 @@ func doRun() {
 		GetItemCountPerCycle()
 
 	messageProvider := provider.Instance()
-	items, err := messageService.Fetch(context.Background(), count)
+	items, err := messageService.Fetch(count)
 	if err != nil {
 		log.Err(err).
 			Msg("Error while fetching items")
@@ -52,12 +51,16 @@ func doRun() {
 		if err != nil {
 			log.Err(err).
 				Msgf("Error while sending message to %s with content %s", inputItem.PhoneNumber, inputItem.Message)
-			messageService.MarkAsFailed(item.ID)
+			err = messageService.MarkAsFailed(item.ID)
 		} else {
 			log.Info().
 				Msgf("Message sent to %s with content %s tracked by %s", inputItem.PhoneNumber, inputItem.Message, response.MessageId)
-			messageService.MarkAsSent(item.ID)
+			err = messageService.MarkAsSent(item.ID, response.MessageId, messageProvider.Type())
 		}
 
+		if err != nil {
+			log.Err(err).
+				Msgf("Error while marking message")
+		}
 	}
 }

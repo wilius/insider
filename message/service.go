@@ -7,9 +7,9 @@ import (
 )
 
 type UnsentMessageService interface {
-	Fetch(ctx context.Context, count uint) (*[]DTO, error)
+	Fetch(count uint) (*[]DTO, error)
+	MarkAsSent(id int64, providerMessageId string, provider constants.ProviderType) error
 	MarkAsFailed(id int64) error
-	MarkAsSent(id int64) error
 }
 
 type dataService struct {
@@ -30,8 +30,8 @@ func (s *dataService) List(ctx context.Context, filter *Filter) (*types.Pageable
 	return s.repo.List(ctx, filter)
 }
 
-func (s *dataService) Fetch(ctx context.Context, count uint) (*[]DTO, error) {
-	items, err := s.repo.FetchForSending(ctx, count)
+func (s *dataService) Fetch(count uint) (*[]DTO, error) {
+	items, err := s.repo.FetchForSending(count)
 	if err != nil {
 		return nil, err
 	}
@@ -44,10 +44,25 @@ func (s *dataService) Fetch(ctx context.Context, count uint) (*[]DTO, error) {
 	return mapped, err
 }
 
-func (s *dataService) MarkAsSent(id int64) error {
-	return s.repo.markAs(id, constants.Sending, constants.Sent)
+func (s *dataService) MarkAsSent(id int64, providerMessageId string, provider constants.ProviderType) error {
+	var providerType = string(provider)
+	return s.repo.update(
+		id,
+		constants.Sending,
+		&entity{
+			Status:            constants.Sent,
+			ProviderMessageID: &providerMessageId,
+			Provider:          &providerType,
+		},
+	)
 }
 
 func (s *dataService) MarkAsFailed(id int64) error {
-	return s.repo.markAs(id, constants.Sending, constants.Failed)
+	return s.repo.update(
+		id,
+		constants.Sending,
+		&entity{
+			Status: constants.Failed,
+		},
+	)
 }

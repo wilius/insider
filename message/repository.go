@@ -59,7 +59,7 @@ func (r *repository) List(ctx context.Context, filter *Filter) (*types.Pageable,
 	return types.MapToPageable(items, &filter.PagedFilter), nil
 }
 
-func (r *repository) FetchForSending(ctx context.Context, count uint) (*[]entity, error) {
+func (r *repository) FetchForSending(count uint) (*[]entity, error) {
 	var items *[]entity
 
 	result := r.db.
@@ -89,14 +89,18 @@ func (r *repository) FetchForSending(ctx context.Context, count uint) (*[]entity
 	return items, nil
 }
 
-func (r *repository) markAs(id int64, expectedStatus, newStatus constants.MessageStatus) error {
+func (r *repository) update(
+	id int64,
+	expectedStatus constants.MessageStatus,
+	item *entity) error {
+
 	result := r.db.
 		Model(&entity{}).
 		Where(&entity{
 			ID:     id,
 			Status: expectedStatus,
 		}).
-		Update("status", newStatus)
+		Updates(item)
 
 	if result.Error != nil {
 		return result.Error
