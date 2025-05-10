@@ -52,3 +52,22 @@ func (r *repository) List(ctx context.Context, filter *Filter) (*types.Pageable,
 
 	return types.MapToPageable(items, &filter.PagedFilter), nil
 }
+
+func (r *repository) FetchForSending(ctx context.Context, count uint) (*[]entity, error) {
+	var items *[]entity
+
+	result := r.db.
+		WithContext(ctx).
+		Where(&entity{
+			Status: Created,
+		}).
+		Order("create_date desc").
+		Limit(int(count)).
+		Find(&items)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return items, nil
+}

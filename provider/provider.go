@@ -1,4 +1,4 @@
-package message_provider
+package provider
 
 type Provider interface {
 	Send(input *SendMessageInput) (*SendMessageOutput, error)

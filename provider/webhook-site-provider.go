@@ -1,4 +1,4 @@
-package message_provider
+package provider
 
 import (
 	"errors"

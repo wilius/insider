@@ -1,23 +1,23 @@
 package server
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/rs/zerolog/log"
 	"insider/configs"
-	"insider/database"
 	"insider/graceful_shutdown"
 	"insider/message"
-	"insider/message_provider"
+	"insider/provider"
 	"net/http"
+	"time"
 )
 
 var httpServer *http.Server
 
-func StartServer() {
-	database.Configure()
-
+func Configure() {
 	serverConfig := configs.
 		Instance().
 		GetServer()
@@ -34,14 +34,26 @@ func StartServer() {
 
 	graceful_shutdown.AddShutdownHook(func() {
 		log.Info().Msg("Closing http listener")
-		_ = httpServer.Close()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		err := httpServer.Shutdown(ctx)
+		if err != nil {
+			log.Err(err).
+				Msgf("http server shutdown failed %v", err)
+		}
 	})
 
-	if err := httpServer.ListenAndServe(); err != nil {
-		log.Fatal().Msgf("server start failed: %v", err)
-	} else {
-		log.Info().Msg("Received shutdown")
-	}
+	go func() {
+		if err := httpServer.ListenAndServe(); err != nil {
+			if errors.Is(err, http.ErrServerClosed) {
+				log.Info().
+					Msg("Listener shutdown has been gracefully completed")
+			} else {
+				log.Fatal().
+					Msgf("server start failed: %v", err)
+			}
+		}
+	}()
 }
 
 func buildRouters() *chi.Mux {
@@ -49,7 +61,7 @@ func buildRouters() *chi.Mux {
 	r.Use(chiMiddleware.Heartbeat("/health"))
 
 	// TODO remove
-	message_provider.Instance()
+	provider.Instance()
 	message.Configure(r)
 
 	return r

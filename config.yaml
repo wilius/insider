@@ -14,6 +14,10 @@ database:
     connectionMaxLifetime: {{ default .DATABASE_CONNECTION_MAX_LIFETIME 60000 }}
     connectionMaxIdleTime: {{ default .DATABASE_CONNECTION_MAX_IDLE_TIME 1000 }}
 
+scheduler:
+  interval: {{ default .SCHEDULER_INTERVAL "10s" }}
+  itemCountPerCycle: 2
+
 provider:
   type: webhook.site
   url: "https://webhook.site/ffb81b98-c811-4959-891a-490da0b916c1"

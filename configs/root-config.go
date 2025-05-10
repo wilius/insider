@@ -4,12 +4,14 @@ type Config interface {
 	GetServer() ServerConfig
 	GetDatabase() DatabaseConfig
 	GetProviderConfig() ProviderConfig
+	GetScheduler() SchedulerConfig
 }
 
 type configImp struct {
-	Server   serverConfigImp   `mapstructure:"server" validate:"required"`
-	Database databaseConfigImp `mapstructure:"database" validate:"required"`
-	Provider ProviderConfig    `mapstructure:"-" validate:"required"`
+	Server    serverConfigImp    `mapstructure:"server" validate:"required"`
+	Database  databaseConfigImp  `mapstructure:"database" validate:"required"`
+	Provider  ProviderConfig     `mapstructure:"-" validate:"required"`
+	Scheduler schedulerConfigImp `mapstructure:"scheduler" validate:"required"`
 }
 
 func (c configImp) GetServer() ServerConfig {
@@ -22,4 +24,8 @@ func (c configImp) GetDatabase() DatabaseConfig {
 
 func (c configImp) GetProviderConfig() ProviderConfig {
 	return c.Provider
+}
+
+func (c configImp) GetScheduler() SchedulerConfig {
+	return c.Scheduler
 }
