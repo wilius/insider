@@ -13,3 +13,7 @@ database:
     maxOpenConnections: {{ default .DATABASE_MAX_OPEN_CONNECTIONS 100 }}
     connectionMaxLifetime: {{ default .DATABASE_CONNECTION_MAX_LIFETIME 60000 }}
     connectionMaxIdleTime: {{ default .DATABASE_CONNECTION_MAX_IDLE_TIME 1000 }}
+
+provider:
+  type: webhook.site
+  url: "https://webhook.site/ffb81b98-c811-4959-891a-490da0b916c1"

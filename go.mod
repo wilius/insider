@@ -8,6 +8,7 @@ require (
 	github.com/go-playground/validator/v10 v10.26.0
 	github.com/lib/pq v1.10.9
 	github.com/rs/zerolog v1.33.0
+	github.com/sony/gobreaker v1.0.0
 	github.com/spf13/viper v1.20.1
 	gorm.io/driver/postgres v1.5.9
 	gorm.io/gorm v1.25.12

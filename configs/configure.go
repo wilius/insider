@@ -12,6 +12,32 @@ import (
 var instance Config
 
 func init() {
+	out := renderConfig()
+
+	viper.SetConfigType("yaml")
+	if err := viper.ReadConfig(bytes.NewBuffer((*out).Bytes())); err != nil {
+		panic(fmt.Errorf("error reading config: %w", err))
+	}
+
+	var config configImp
+	if err := viper.Unmarshal(&config); err != nil {
+		panic(fmt.Errorf("unable to decode into struct: %w", err))
+	}
+
+	config.Provider = readProviderConfig()
+	instance = config
+}
+
+func readProviderConfig() ProviderConfig {
+	providerConfigMap := viper.GetStringMap("provider")
+	providerConfig, err := providerConfigFactory(&providerConfigMap)
+	if err != nil {
+		panic(fmt.Errorf("unable to decode into struct: %w", err))
+	}
+	return providerConfig
+}
+
+func renderConfig() *bytes.Buffer {
 	configData, err := os.ReadFile("config.yaml")
 	if err != nil {
 		panic(fmt.Errorf("fatal error reading config file: %w", err))
@@ -35,17 +61,7 @@ func init() {
 		panic(fmt.Errorf("template execution error: %w", err))
 	}
 
-	viper.SetConfigType("yaml")
-	if err := viper.ReadConfig(bytes.NewBuffer(out.Bytes())); err != nil {
-		panic(fmt.Errorf("error reading config: %w", err))
-	}
-
-	var config configImp
-	if err := viper.Unmarshal(&config); err != nil {
-		panic(fmt.Errorf("unable to decode into struct: %w", err))
-	}
-
-	instance = config
+	return &out
 }
 
 func Instance() Config {
