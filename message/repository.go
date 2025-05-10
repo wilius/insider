@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+	"insider/constants"
 	"insider/types"
 )
 
@@ -37,6 +38,11 @@ func (r *repository) List(ctx context.Context, filter *Filter) (*types.Pageable,
 		Order("id desc").
 		Limit(filter.CalculateLimit()).
 		Offset(filter.CalculateOffset())
+
+	if filter.Status != nil {
+		dbQuery = dbQuery.
+			Where("status = ?", *filter.Status)
+	}
 
 	if filter.Query != nil {
 		dbQuery = dbQuery.
@@ -70,8 +76,8 @@ func (r *repository) FetchForSending(ctx context.Context, count uint) (*[]entity
 			)
 			RETURNING *;
         `, map[string]interface{}{
-			"upToDateStatus": Sending,
-			"currentStatus":  Created,
+			"upToDateStatus": constants.Sending,
+			"currentStatus":  constants.Created,
 			"fetchCount":     count,
 		}).
 		Find(&items)
@@ -81,4 +87,24 @@ func (r *repository) FetchForSending(ctx context.Context, count uint) (*[]entity
 	}
 
 	return items, nil
+}
+
+func (r *repository) markAs(id int64, expectedStatus, newStatus constants.MessageStatus) error {
+	result := r.db.
+		Model(&entity{}).
+		Where(&entity{
+			ID:     id,
+			Status: expectedStatus,
+		}).
+		Update("status", newStatus)
+
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+
+	return nil
 }

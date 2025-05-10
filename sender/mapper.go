@@ -5,9 +5,9 @@ import (
 	"insider/provider"
 )
 
-func mapTo(dto *message.Dto) (*provider.SendMessageInput, error) {
+func mapTo(dto *message.DTO) *provider.SendMessageInput {
 	return &provider.SendMessageInput{
 		PhoneNumber: dto.PhoneNumber,
 		Message:     dto.Message,
-	}, nil
+	}
 }

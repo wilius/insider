@@ -2,18 +2,19 @@ package message
 
 import (
 	"fmt"
+	"insider/constants"
 	customError "insider/error"
 	"insider/types"
 	"net/url"
 )
 
-func mapToDTO(item *entity) (*Dto, error) {
+func mapToHttpDTO(item *entity) (*HttpDTO, error) {
 	status, err := mapStatus(&item.Status)
 	if err != nil {
 		return nil, err
 	}
 
-	d := &Dto{
+	d := &HttpDTO{
 		ID: types.EntityId{
 			Id: item.ID,
 		},
@@ -27,15 +28,33 @@ func mapToDTO(item *entity) (*Dto, error) {
 	return d, nil
 }
 
-func mapStatus(status *messageStatus) (*messageStatus, error) {
+func mapToDTO(item *entity) (*DTO, error) {
+	status, err := mapStatus(&item.Status)
+	if err != nil {
+		return nil, err
+	}
+
+	d := &DTO{
+		ID:          item.ID,
+		PhoneNumber: item.PhoneNumber,
+		Message:     item.Message,
+		Status:      *status,
+		CreateDate:  item.CreateDate,
+		UpdateDate:  item.UpdateDate,
+	}
+
+	return d, nil
+}
+
+func mapStatus(status *constants.MessageStatus) (*constants.MessageStatus, error) {
 	switch *status {
-	case Created:
+	case constants.Created:
 		return &dtoStatus.Created, nil
-	case Sending:
+	case constants.Sending:
 		return &dtoStatus.Sending, nil
-	case Sent:
+	case constants.Sent:
 		return &dtoStatus.Sent, nil
-	case Failed:
+	case constants.Failed:
 		return &dtoStatus.Failed, nil
 	default:
 		return nil, customError.NewProcessingError(
@@ -48,16 +67,24 @@ func mapCreate(data *createRequest) *entity {
 	item := &entity{
 		PhoneNumber: data.PhoneNumber,
 		Message:     data.Message,
-		Status:      Created,
+		Status:      constants.Created,
 	}
 
 	return item
 }
 
 func mapQueryToFilter(valuesPtr *url.Values) *Filter {
+	status := getFirst(valuesPtr, "status")
+
+	if status == nil {
+		tmp := constants.Sent
+		status = &tmp
+	}
+
 	return &Filter{
 		PagedFilter: *types.ParseQueryForPageFilter(valuesPtr),
 		Query:       getFirst(valuesPtr, "query"),
+		Status:      status,
 	}
 }
 

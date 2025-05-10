@@ -5,7 +5,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"insider/configs"
 	"insider/provider"
-	"insider/types"
 	"time"
 )
 
@@ -43,23 +42,21 @@ func doRun() {
 		return
 	}
 
-	inputItems, err := types.MapToDTOList(items, mapTo)
-	if err != nil {
-		log.Err(err).
-			Msg("Error while fetching items")
-		return
-	}
-
-	for _, inputItem := range *inputItems {
+	for _, item := range *items {
 		log.Info().
-			Msgf("Sending message to %s with content %s", inputItem.PhoneNumber, inputItem.Message)
-		response, err := messageProvider.Send(&inputItem)
+			Msgf("Sending message to %s with content %s", item.PhoneNumber, item.Message)
+
+		inputItem := mapTo(&item)
+
+		response, err := messageProvider.Send(inputItem)
 		if err != nil {
 			log.Err(err).
 				Msgf("Error while sending message to %s with content %s", inputItem.PhoneNumber, inputItem.Message)
+			messageService.MarkAsFailed(item.ID)
 		} else {
 			log.Info().
 				Msgf("Message sent to %s with content %s tracked by %s", inputItem.PhoneNumber, inputItem.Message, response.MessageId)
+			messageService.MarkAsSent(item.ID)
 		}
 
 	}

@@ -2,11 +2,14 @@ package message
 
 import (
 	"context"
+	"insider/constants"
 	"insider/types"
 )
 
 type UnsentMessageService interface {
-	Fetch(ctx context.Context, count uint) (*[]Dto, error)
+	Fetch(ctx context.Context, count uint) (*[]DTO, error)
+	MarkAsFailed(id int64) error
+	MarkAsSent(id int64) error
 }
 
 type dataService struct {
@@ -27,7 +30,7 @@ func (s *dataService) List(ctx context.Context, filter *Filter) (*types.Pageable
 	return s.repo.List(ctx, filter)
 }
 
-func (s *dataService) Fetch(ctx context.Context, count uint) (*[]Dto, error) {
+func (s *dataService) Fetch(ctx context.Context, count uint) (*[]DTO, error) {
 	items, err := s.repo.FetchForSending(ctx, count)
 	if err != nil {
 		return nil, err
@@ -39,4 +42,12 @@ func (s *dataService) Fetch(ctx context.Context, count uint) (*[]Dto, error) {
 	}
 
 	return mapped, err
+}
+
+func (s *dataService) MarkAsSent(id int64) error {
+	return s.repo.markAs(id, constants.Sending, constants.Sent)
+}
+
+func (s *dataService) MarkAsFailed(id int64) error {
+	return s.repo.markAs(id, constants.Sending, constants.Failed)
 }

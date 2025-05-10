@@ -1,6 +1,7 @@
 package message
 
 import (
+	"insider/constants"
 	"insider/types"
 	"insider/util"
 	"net/http"
@@ -8,15 +9,15 @@ import (
 )
 
 var dtoStatus = struct {
-	Created messageStatus
-	Sending messageStatus
-	Sent    messageStatus
-	Failed  messageStatus
+	Created constants.MessageStatus
+	Sending constants.MessageStatus
+	Sent    constants.MessageStatus
+	Failed  constants.MessageStatus
 }{
-	Created: Created,
-	Sending: Sending,
-	Sent:    Sent,
-	Failed:  Failed,
+	Created: constants.Created,
+	Sending: constants.Sending,
+	Sent:    constants.Sent,
+	Failed:  constants.Failed,
 }
 
 type createRequest struct {
@@ -28,11 +29,26 @@ func (s *createRequest) Bind(_ *http.Request) error {
 	return util.Validate(s)
 }
 
-type Dto struct {
-	ID          types.EntityId `json:"id"`
-	PhoneNumber string         `json:"phoneNumber"`
-	Message     string         `json:"message"`
-	Status      messageStatus  `json:"status"`
-	CreateDate  time.Time      `json:"createDate"`
-	UpdateDate  *time.Time     `json:"updateDate"`
+type HttpDTO struct {
+	ID          types.EntityId          `json:"id"`
+	PhoneNumber string                  `json:"phoneNumber"`
+	Message     string                  `json:"message"`
+	Status      constants.MessageStatus `json:"status"`
+	CreateDate  time.Time               `json:"createDate"`
+	UpdateDate  *time.Time              `json:"updateDate"`
+}
+
+type DTO struct {
+	ID          int64
+	PhoneNumber string
+	Message     string
+	Status      constants.MessageStatus
+	CreateDate  time.Time
+	UpdateDate  *time.Time
+}
+
+type Filter struct {
+	types.PagedFilter
+	Query  *string
+	Status *string
 }

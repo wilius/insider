@@ -36,7 +36,7 @@ func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusCreated)
-	dto, err := mapToDTO(output)
+	dto, err := mapToHttpDTO(output)
 	if err != nil {
 		customError.ResponseError(&w, r, customError.NewProcessingError(err.Error()))
 		return
@@ -55,7 +55,7 @@ func (h *handler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	casted, err := types.MapToPageDTO(pagedResult, mapToDTO)
+	casted, err := types.MapToPageDTO(pagedResult, mapToHttpDTO)
 	if err != nil {
 		customError.ResponseError(&w, r, err)
 		return
