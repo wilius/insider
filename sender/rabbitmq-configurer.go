@@ -84,3 +84,10 @@ func listenChanges(consumer *rabbitmq.Consumer) {
 		log.Fatal().Err(err).Msgf("Unexpected exception while running consumer")
 	}
 }
+
+func doHandleCheckingMessage(event *eventDto) error {
+	log.Info().
+		Msgf("Received message with ID: %d", event.Id)
+
+	return messageService.MarkAsCreated(event.Id)
+}

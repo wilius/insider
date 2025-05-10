@@ -9,18 +9,42 @@ import (
 	"time"
 )
 
-func runner() {
-	doRun() // Run the task immediately
-	ticker := time.NewTicker(instance.interval)
+func newScheduler() *scheduler {
+	messageService = message.GetUnsentMessageService()
+
+	schedulerConfig := configs.Instance().
+		GetScheduler()
+
+	schedulerInstance = &scheduler{
+		interval: schedulerConfig.GetInterval(),
+	}
+
+	schedulerInstance.Start()
+	return schedulerInstance
+}
+
+type scheduler struct {
+	interval time.Duration
+	stop     chan struct{}
+}
+
+func (s scheduler) Start() {
+	s.stop = make(chan struct{})
+	go s.doStart()
+}
+
+func (s scheduler) doStart() {
+	s.doRun() // Run the task immediately
+	ticker := time.NewTicker(schedulerInstance.interval)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
 			ticker.Stop()
-			doRun()
-			ticker.Reset(instance.interval)
-		case <-instance.stop:
+			s.doRun()
+			ticker.Reset(schedulerInstance.interval)
+		case <-schedulerInstance.stop:
 			log.Info().
 				Msg("Scheduler stopped")
 			return
@@ -28,21 +52,21 @@ func runner() {
 	}
 }
 
-func doRun() {
+func (s scheduler) doRun() {
 	log.Info().
 		Msg("Running scheduler")
 
-	itemsToSend, err := fetchMessages()
+	itemsToSend, err := s.fetchMessages()
 	if err != nil {
 		return
 	}
 
 	for _, item := range *itemsToSend {
-		doSendMessage(&item)
+		s.doSendMessage(&item)
 	}
 }
 
-func fetchMessages() (*[]message.DTO, error) {
+func (s scheduler) fetchMessages() (*[]message.DTO, error) {
 	tx := database.Instance().Begin()
 	count := configs.Instance().
 		GetScheduler().
@@ -78,7 +102,7 @@ func fetchMessages() (*[]message.DTO, error) {
 	return &itemsToSend, nil
 }
 
-func doSendMessage(item *message.DTO) {
+func (s scheduler) doSendMessage(item *message.DTO) {
 	log.Info().
 		Msgf("Sending message to %s with content %s with id %d", item.PhoneNumber, item.Message, item.ID)
 
@@ -103,9 +127,6 @@ func doSendMessage(item *message.DTO) {
 	}
 }
 
-func doHandleCheckingMessage(event *eventDto) error {
-	log.Info().
-		Msgf("Received message with ID: %d", event.Id)
-
-	return messageService.MarkAsCreated(event.Id)
+func (s scheduler) Stop() {
+	close(schedulerInstance.stop)
 }

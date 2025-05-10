@@ -1,47 +1,31 @@
 package sender
 
 import (
-	"insider/configs"
+	"github.com/go-chi/chi/v5"
 	"insider/graceful_shutdown"
 	"insider/message"
 	"insider/rabbitmq"
 	"sync"
-	"time"
 )
 
 var (
-	instance       *scheduler
-	connectionOnce sync.Once
-	messageService message.UnsentMessageService
-	publisher      *rabbitmq.Publisher
+	schedulerInstance *scheduler
+	connectionOnce    sync.Once
+	messageService    message.UnsentMessageService
+	publisher         *rabbitmq.Publisher
 )
 
-type scheduler struct {
-	interval time.Duration
-	stop     chan struct{}
-}
-
-func Start() {
+func Configure(mux *chi.Mux) {
 	connectionOnce.Do(func() {
+		schedulerInstance = newScheduler()
 		configureRabbitMQ()
-		configureScheduler()
-	})
-}
-
-func configureScheduler() {
-	messageService = message.GetUnsentMessageService()
-
-	graceful_shutdown.AddShutdownHook(func() {
-		close(instance.stop)
+		graceful_shutdown.AddShutdownHook(func() {
+			schedulerInstance.Stop()
+		})
 	})
 
-	schedulerConfig := configs.Instance().
-		GetScheduler()
+	handlerInstance := newHandler()
 
-	instance = &scheduler{
-		interval: schedulerConfig.GetInterval(),
-		stop:     make(chan struct{}),
-	}
-
-	go runner()
+	mux.Get("/messages", handlerInstance.Start)
+	mux.Post("/messages", handlerInstance.Stop)
 }
