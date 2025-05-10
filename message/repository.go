@@ -57,12 +57,23 @@ func (r *repository) FetchForSending(ctx context.Context, count uint) (*[]entity
 	var items *[]entity
 
 	result := r.db.
-		WithContext(ctx).
-		Where(&entity{
-			Status: Created,
+		Raw(`
+           UPDATE notifications.message
+			SET status = @upToDateStatus,
+			    update_date = now()
+			WHERE id IN (
+				SELECT id 
+				FROM notifications.message 
+				WHERE status = @currentStatus
+				ORDER BY create_date
+				LIMIT @fetchCount
+			)
+			RETURNING *;
+        `, map[string]interface{}{
+			"upToDateStatus": Sending,
+			"currentStatus":  Created,
+			"fetchCount":     count,
 		}).
-		Order("create_date desc").
-		Limit(int(count)).
 		Find(&items)
 
 	if result.Error != nil {

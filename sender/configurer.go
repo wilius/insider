@@ -1,8 +1,6 @@
 package sender
 
 import (
-	"context"
-	"github.com/rs/zerolog/log"
 	"insider/configs"
 	"insider/graceful_shutdown"
 	"insider/message"
@@ -35,43 +33,6 @@ func Start() {
 			stop:     make(chan struct{}),
 		}
 
-		go func() {
-			doRun() // Run the task immediately
-			ticker := time.NewTicker(instance.interval)
-			defer ticker.Stop()
-
-			for {
-				select {
-				case <-ticker.C:
-					ticker.Stop()
-					doRun()
-					ticker.Reset(instance.interval)
-				case <-instance.stop:
-					log.Info().
-						Msg("Scheduler stopped")
-					return
-				}
-			}
-		}()
+		go runner()
 	})
-}
-
-func doRun() {
-	log.Info().
-		Msg("Running scheduler")
-	count := configs.Instance().
-		GetScheduler().
-		GetItemCountPerCycle()
-
-	items, err := messageService.Fetch(context.Background(), count)
-	if err != nil {
-		log.Err(err).
-			Msg("Error while fetching items")
-		return
-	}
-
-	for _, item := range *items {
-		log.Info().
-			Msgf("Sending message to %s with content %s", item.PhoneNumber, item.Message)
-	}
 }

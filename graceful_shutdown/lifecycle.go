@@ -8,6 +8,7 @@ import (
 )
 
 var shutdownHooks []func()
+var appUpChannel = make(chan int, 1)
 
 func init() {
 	signalChan := make(chan os.Signal, 1)
@@ -18,10 +19,18 @@ func init() {
 		for _, hook := range shutdownHooks {
 			hook()
 		}
+
+		appUpChannel <- 1
 	}()
 
 }
 
 func AddShutdownHook(fn func()) {
 	shutdownHooks = append(shutdownHooks, fn)
+}
+
+func KeepAppUp() {
+	select {
+	case <-appUpChannel:
+	}
 }

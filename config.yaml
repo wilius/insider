@@ -7,7 +7,7 @@ database:
   name: {{ default .DATABASE_NAME "insider" }}
   username: {{ default .DATABASE_USERNAME "postgres" }}
   password: {{ default .DATABASE_PASSWORD "postgres" }}
-  logLevel: 4
+  logLevel: 1
   pool:
     maxIdleConnections: {{ default .DATABASE_MAX_IDLE_CONNECTIONS 5 }}
     maxOpenConnections: {{ default .DATABASE_MAX_OPEN_CONNECTIONS 100 }}
@@ -16,7 +16,7 @@ database:
 
 scheduler:
   interval: {{ default .SCHEDULER_INTERVAL "10s" }}
-  itemCountPerCycle: 2
+  itemCountPerCycle: {{ default .SCHEDULER_ITEM_COUNT_PER_CYCLE 2 }}
 
 provider:
   type: webhook.site

@@ -5,10 +5,10 @@ type Provider interface {
 }
 
 type SendMessageInput struct {
-	phoneNumber string
-	message     string
+	PhoneNumber string
+	Message     string
 }
 
 type SendMessageOutput struct {
-	messageId string
+	MessageId string
 }
