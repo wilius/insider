@@ -26,7 +26,7 @@ server: build
 	docker compose up -d
 
 develop:
-	docker compose up postgres redis -d
+	docker compose up postgres redis webhook -d
 
 stop:
 	docker compose down

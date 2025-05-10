@@ -18,6 +18,17 @@ services:
       - postgres
       - redis
 
+  webhook:
+    build:
+      context: docker_files/python
+    init: true
+    pull_policy: "build"
+    environment:
+      DOCKER_BUILDKIT: 1
+      COMPOSE_DOCKER_CLI_BUILD: 1
+    ports:
+      - "5000:5000"
+
   postgres:
     image: postgres:16-alpine
     environment:
