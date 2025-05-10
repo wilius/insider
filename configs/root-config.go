@@ -3,15 +3,17 @@ package configs
 type Config interface {
 	GetServer() ServerConfig
 	GetDatabase() DatabaseConfig
-	GetProviderConfig() ProviderConfig
+	GetRabbitMQ() RabbitmqConfig
 	GetScheduler() SchedulerConfig
+	GetProviderConfig() ProviderConfig
 }
 
 type configImp struct {
 	Server    serverConfigImp    `mapstructure:"server" validate:"required"`
 	Database  databaseConfigImp  `mapstructure:"database" validate:"required"`
-	Provider  ProviderConfig     `mapstructure:"-" validate:"required"`
 	Scheduler schedulerConfigImp `mapstructure:"scheduler" validate:"required"`
+	RabbitMQ  rabbitmqConfigImp  `mapstructure:"rabbitmq" validate:"required"`
+	Provider  ProviderConfig     `mapstructure:"-" validate:"required"`
 }
 
 func (c configImp) GetServer() ServerConfig {
@@ -28,4 +30,8 @@ func (c configImp) GetProviderConfig() ProviderConfig {
 
 func (c configImp) GetScheduler() SchedulerConfig {
 	return c.Scheduler
+}
+
+func (c configImp) GetRabbitMQ() RabbitmqConfig {
+	return c.RabbitMQ
 }

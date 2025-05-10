@@ -14,6 +14,13 @@ database:
     connectionMaxLifetime: {{ default .DATABASE_CONNECTION_MAX_LIFETIME 60000 }}
     connectionMaxIdleTime: {{ default .DATABASE_CONNECTION_MAX_IDLE_TIME 1000 }}
 
+rabbitmq:
+  host: {{ default .RABBITMQ_HOST "localhost" }}
+  port: {{ default .RABBITMQ_PORT 5672 }}
+  vhost: {{ default .RABBITMQ_VHOST "insider" }}
+  username: {{ default .RABBITMQ_USERNAME "guest" }}
+  password: {{ default .RABBITMQ_PASSWORD "guest" }}
+
 scheduler:
   interval: {{ default .SCHEDULER_INTERVAL "10s" }}
   itemCountPerCycle: {{ default .SCHEDULER_ITEM_COUNT_PER_CYCLE 2 }}

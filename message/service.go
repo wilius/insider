@@ -10,6 +10,7 @@ type UnsentMessageService interface {
 	Fetch(count uint) (*[]DTO, error)
 	MarkAsSent(id int64, providerMessageId string, provider constants.ProviderType) error
 	MarkAsFailed(id int64) error
+	MarkAsCreated(id int64) error
 }
 
 type dataService struct {
@@ -63,6 +64,16 @@ func (s *dataService) MarkAsFailed(id int64) error {
 		constants.Sending,
 		&entity{
 			Status: constants.Failed,
+		},
+	)
+}
+
+func (s *dataService) MarkAsCreated(id int64) error {
+	return s.repo.update(
+		id,
+		constants.Sending,
+		&entity{
+			Status: constants.Created,
 		},
 	)
 }

@@ -1,6 +1,7 @@
 package sender
 
 import (
+	"github.com/wagslane/go-rabbitmq"
 	"insider/configs"
 	"insider/graceful_shutdown"
 	"insider/message"
@@ -19,20 +20,25 @@ type scheduler struct {
 
 func Start() {
 	connectionOnce.Do(func() {
-		messageService = message.GetUnsentMessageService()
-
-		graceful_shutdown.AddShutdownHook(func() {
-			close(instance.stop)
-		})
-
-		schedulerConfig := configs.Instance().
-			GetScheduler()
-
-		instance = &scheduler{
-			interval: schedulerConfig.GetInterval(),
-			stop:     make(chan struct{}),
-		}
-
-		go runner()
+		publisher := configureRabbitMQ()
+		configureScheduler(publisher)
 	})
+}
+
+func configureScheduler(publisher *rabbitmq.Publisher) {
+	messageService = message.GetUnsentMessageService()
+
+	graceful_shutdown.AddShutdownHook(func() {
+		close(instance.stop)
+	})
+
+	schedulerConfig := configs.Instance().
+		GetScheduler()
+
+	instance = &scheduler{
+		interval: schedulerConfig.GetInterval(),
+		stop:     make(chan struct{}),
+	}
+
+	go runner(publisher)
 }

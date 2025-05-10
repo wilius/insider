@@ -26,7 +26,7 @@ server: build
 	docker compose up -d
 
 develop:
-	docker compose up postgres redis webhook -d
+	docker compose up postgres redis rabbitmq webhook -d
 
 stop:
 	docker compose down
