@@ -1,0 +1,256 @@
+openapi: 3.0.4
+info:
+  title: Swagger Message Sender - OpenAPI 3.0
+  description: |-
+    This project is a Message Delivery System that automatically retrieves and sends unsent messages from the database every 2 minutes. The system ensures:
+
+    - Only unsent messages are retrieved and processed.
+    - Sent messages are not resent.
+    - New records added to the database are automatically picked up in the next cycle.
+    - Message contents are limited by character count constraints.
+  termsOfService: https://swagger.io/terms/
+  contact:
+    email: zanasimsek@gmail.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  version: '11'
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: messages
+    description: Message-related endpoints
+  - name: sender
+    description: Controlling the scheduled runner
+paths:
+  /messages:
+    post:
+      tags:
+        - messages
+      summary: Scheduling a new message
+      description: It is scheduling a new message to be delived with provided content to the provided recepient
+      operationId: createMessage
+      requestBody:
+        description: Create a new message
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMessage'
+        required: true
+      responses:
+        '201':
+          description: Successful operation
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error_400"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error_422"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error_5xx"
+    get:
+      tags:
+        - messages
+      summary: Lists sent messages
+      description: This endpoint lists all the sent messages in a pagination fashion
+      operationId: listMessage
+      parameters:
+        - name: page
+          in: query
+          description: Page number to retrieve list of sent messages
+          required: false
+          explode: true
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          description: Size of the desired page
+          required: false
+          explode: true
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedResponse"
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error_400"
+        '422':
+          description: Validation exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error_422"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error_5xx"
+  /sender/stop:
+    put:
+      tags:
+        - sender
+      summary: Intterrupts the message sending
+      description: This one is interrupting the sending process of messages gracefully. it does nothing if the sender is already stopped
+      operationId: stopSender
+      responses:
+        '201':
+          description: Successful operation
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error_5xx"
+  /sender/start:
+    put:
+      tags:
+        - sender
+      summary: Intterrupts the message sending
+      description: This one is starting the sending process again in case of manually intervented interruption. it does nothing if the sender is already started
+      operationId: startSender
+      responses:
+        '201':
+          description: Successful operation
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error_5xx"
+
+components:
+  schemas:
+    CreateMessage:
+      type: object
+      properties:
+        phoneNumber:
+          type: string
+          example: "+905554443322"
+        message:
+          type: integer
+          format: int64
+          example: "Greeting to new Insider"
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          example: a09ce378ab2793e6d962ef28396a517a
+          description: id of the created message as an encrypted text
+        phoneNumber:
+          type: string
+          example: +905362655496
+          description: provided phone number as part of create request
+        message:
+          type: string
+          example: 40a3
+          description: content of the message delived to the recipient
+        status:
+          type: string
+          example: SENT
+          description: status of the message
+        createDate:
+          type: string
+          format: date-time
+          example: "2025-05-11T08:06:28.260087Z"
+          description: creation date of the provided message in ISO-8601
+        updateDate:
+          type: string
+          format: date-time
+          example: "2025-05-11T08:06:45.666205Z"
+          description: update date of the provided message in ISO-8601
+    PaginatedResponse:
+      type: object
+      properties:
+        first:
+          type: boolean
+          example: true
+          description: indicates whether the retrieved page is the very first page of the desired content
+        last:
+          type: boolean
+          example: true
+          description: indicates whether the retrieved page is the last page of the desired content
+        size:
+          type: integer
+          example: 20
+          description: indicates the requested page size
+        page:
+          type: integer
+          example: 1
+          description: indicates the number of requested page
+        numberOfElements:
+          type: integer
+          example: 3
+          description: indicates the number of the elements inside the content section
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+          description: messages
+
+    Error_400:
+      type: object
+      properties:
+        code:
+          type: string
+          example: INVALID_PARAMS
+        message:
+          type: string
+          example: Invalid params
+        detail:
+          type: string
+          example: Provided value for phoneNumber is not correct
+      required:
+        - code
+        - message
+    Error_422:
+      type: object
+      properties:
+        code:
+          type: string
+          example: PROCESSING_ERROR
+        message:
+          type: string
+          example: Processing error
+        detail:
+          type: string
+          example: Provided phone number is not supported by insider message sender engine
+      required:
+        - code
+        - message
+    Error_5xx:
+      type: object
+      properties:
+        code:
+          type: string
+          example: UNEXPECTED_EXCEPTION
+        message:
+          type: string
+          example: Unexpected Exception
+        detail:
+          type: string
+          example: Something went wrong while processing database transaction
+      required:
+        - code
+        - message

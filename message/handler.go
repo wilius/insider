@@ -60,5 +60,6 @@ func (h *handler) List(w http.ResponseWriter, r *http.Request) {
 		customError.ResponseError(&w, r, err)
 		return
 	}
+	render.Status(r, http.StatusOK)
 	render.JSON(w, r, casted)
 }

@@ -3,15 +3,12 @@ package types
 import "errors"
 
 type Pageable struct {
-	TotalPages       int         `json:"totalPages"`
-	TotalElements    int         `json:"totalElements"`
 	First            bool        `json:"first"`
 	Last             bool        `json:"last"`
 	Size             int         `json:"size"`
 	Content          interface{} `json:"content"`
-	Number           int         `json:"number"`
+	Page             int         `json:"page"`
 	NumberOfElements int         `json:"numberOfElements"`
-	Empty            bool        `json:"empty"`
 }
 
 func MapToPageDTO[T any, K any](
@@ -69,15 +66,12 @@ func MapToPageable[T any](items *[]T, filter *PagedFilter) *Pageable {
 
 	dereference = dereference[0:itemLen]
 	pageable := Pageable{
-		TotalPages:       totalPages,
-		TotalElements:    totalElements,
 		First:            page == 1,
 		Last:             !hasNextPage,
 		Size:             size,
 		Content:          &dereference,
-		Number:           page,
+		Page:             page,
 		NumberOfElements: itemLen,
-		Empty:            itemLen == 0,
 	}
 
 	return &pageable

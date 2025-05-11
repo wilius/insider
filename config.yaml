@@ -30,9 +30,9 @@ scheduler:
   itemCountPerCycle: {{ default .SCHEDULER_ITEM_COUNT_PER_CYCLE 2 }}
 
 provider:
-  type: webhook.site
-  url: "http://localhost:5000/webhook"
-  requestTimeout: 5s
+  type: {{ default .WEBHOOK_PROVIDER "webhook.site" }}
+  url: {{ default .WEBHOOK_PROVIDER_WEBHOOKSITE_URL "http://localhost:5000/webhook" }}
+  requestTimeout: {{ default .WEBHOOK_PROVIDER_WEBHOOKSITE_REQUEST_TIMEOUT "5s" }}
   circuitBreaker:
     maxRequests: 5
     maxFailure: 5

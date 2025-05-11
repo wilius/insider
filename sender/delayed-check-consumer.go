@@ -68,5 +68,5 @@ func (c *delayedCheckConsumer) doHandleCheckingMessage(event *eventDto) error {
 	log.Info().
 		Msgf("Received message with ID: %d", event.Id)
 
-	return c.messageService.MarkAsCreated(event.Id)
+	return c.messageService.MarkAsFailed(event.Id)
 }

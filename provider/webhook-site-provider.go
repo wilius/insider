@@ -79,7 +79,7 @@ func (s *senderImp) Send(input *SendMessageInput) (*SendMessageOutput, error) {
 		}()
 
 		log.Trace().
-			Msgf("[HTTP] Sending request to %s", input.PhoneNumber)
+			Msgf("[HTTP] Sending request to %s", s.config.GetUrl())
 
 		req, err := http.NewRequest("POST", s.config.GetUrl(), reader)
 		if err != nil {

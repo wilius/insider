@@ -1,12 +1,8 @@
-FROM golang:alpine AS base
+FROM golang:alpine AS builder
 RUN mkdir -p /app
 RUN apk update && apk add ca-certificates tzdata
 RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 WORKDIR /app
-
-FROM base AS dev
-
-FROM base AS builder
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
@@ -20,8 +16,9 @@ COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /app/application /app/application
 COPY --from=builder /app/database/migrations /app/database/migrations
-COPY --from=builder /app/database/scripts/migrate.sh /app/database/scripts/migrate.sh
+COPY --from=builder /app/database/scripts/ /app/database/scripts/
 COPY docker-entrypoint.sh .
+COPY config.yaml .
 
 RUN chmod +x ./docker-entrypoint.sh
 CMD ["/bin/sh", "/app/docker-entrypoint.sh"]

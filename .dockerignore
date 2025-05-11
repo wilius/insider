@@ -10,3 +10,6 @@ vendor/
 .env
 var.env
 .env.example
+Makefile
+LICENSE
+test_files

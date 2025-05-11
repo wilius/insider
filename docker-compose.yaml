@@ -2,21 +2,25 @@ services:
   app:
     build:
       context: .
-      target: dev
-    entrypoint: sh -c
     init: true
     pull_policy: "build"
     environment:
       DOCKER_BUILDKIT: 1
       COMPOSE_DOCKER_CLI_BUILD: 1
+    entrypoint: sh -c
     env_file: .env
-    volumes:
-      - .:/app
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      webhook:
+        condition: service_started
+
 
   webhook:
     build:
@@ -41,7 +45,7 @@ services:
     ports:
       - '5432:5432'
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres -d insider" ]
+      test: ["CMD-SHELL", "pg_isready -U aerogenius-admin -d aerogenius_ai_prod"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -66,6 +70,11 @@ services:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
       - RABBITMQ_DEFAULT_VHOST=insider
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]
+      interval: 1s
+      timeout: 5s
+      retries: 100
 
 volumes:
   postgres_data:

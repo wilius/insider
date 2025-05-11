@@ -10,20 +10,16 @@ create-migration: env
 	docker compose run --rm --user "$(shell id -u):$(shell id -g)" app "database/scripts/create_migration.sh $(name)"
 
 migrate: env
-	docker compose run --rm app "sleep 3 && database/scripts/migrate.sh"
+	docker compose run --rm app "database/scripts/migrate.sh"
 
 rollback: env
-	docker compose run --rm app "sleep 3 && database/scripts/rollback.sh $(count)"
-
+	docker compose run --rm app "database/scripts/rollback.sh $(count)"
 
 build: env
-	docker compose build ...
-
-debug-build: env
-	DOCKER_BUILDKIT=1 ... --progress=plain
+	docker compose build app webhook
 
 server: build
-	docker compose up -d
+	docker compose run --service-ports --rm app './docker-entrypoint.sh'
 
 develop:
 	docker compose up postgres redis rabbitmq webhook -d
