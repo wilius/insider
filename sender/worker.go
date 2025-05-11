@@ -6,73 +6,50 @@ import (
 	"insider/database"
 	"insider/message"
 	"insider/provider"
-	"time"
+	"insider/rabbitmq"
 )
 
-func newScheduler() *scheduler {
-	messageService = message.GetUnsentMessageService()
-
-	schedulerConfig := configs.Instance().
-		GetScheduler()
-
-	schedulerInstance = &scheduler{
-		interval: schedulerConfig.GetInterval(),
-	}
-
-	schedulerInstance.Start()
-	return schedulerInstance
+type sendMessageWorker struct {
+	publisher      *rabbitmq.Publisher
+	messageService message.UnsentMessageService
+	consumer       *delayedCheckConsumer
 }
 
-type scheduler struct {
-	interval time.Duration
-	stop     chan struct{}
-}
+func newSendMessageWorker(
+	publisher *rabbitmq.Publisher,
+	messageService message.UnsentMessageService,
+) *sendMessageWorker {
 
-func (s scheduler) Start() {
-	s.stop = make(chan struct{})
-	go s.doStart()
-}
+	consumer := newDelayedCheckConsumer(messageService)
 
-func (s scheduler) doStart() {
-	s.doRun() // Run the task immediately
-	ticker := time.NewTicker(schedulerInstance.interval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			ticker.Stop()
-			s.doRun()
-			ticker.Reset(schedulerInstance.interval)
-		case <-schedulerInstance.stop:
-			log.Info().
-				Msg("Scheduler stopped")
-			return
-		}
+	return &sendMessageWorker{
+		publisher:      publisher,
+		messageService: messageService,
+		consumer:       consumer,
 	}
 }
 
-func (s scheduler) doRun() {
+func (w sendMessageWorker) doRun() {
 	log.Info().
 		Msg("Running scheduler")
 
-	itemsToSend, err := s.fetchMessages()
+	itemsToSend, err := w.fetchMessages()
 	if err != nil {
 		return
 	}
 
 	for _, item := range *itemsToSend {
-		s.doSendMessage(&item)
+		w.doSendMessage(&item)
 	}
 }
 
-func (s scheduler) fetchMessages() (*[]message.DTO, error) {
+func (w sendMessageWorker) fetchMessages() (*[]message.DTO, error) {
 	tx := database.Instance().Begin()
 	count := configs.Instance().
 		GetScheduler().
 		GetItemCountPerCycle()
 
-	items, err := messageService.Fetch(tx, count)
+	items, err := w.messageService.Fetch(tx, count)
 	if err != nil {
 		log.Err(err).
 			Msg("Error while fetching items")
@@ -81,7 +58,7 @@ func (s scheduler) fetchMessages() (*[]message.DTO, error) {
 
 	itemsToSend := make([]message.DTO, 0)
 	for _, item := range *items {
-		err = publisher.PublishEvent(
+		err = w.publisher.PublishEvent(
 			&eventDto{Id: item.ID},
 			"delayed_message",
 		)
@@ -89,7 +66,7 @@ func (s scheduler) fetchMessages() (*[]message.DTO, error) {
 		if err != nil {
 			log.Err(err).
 				Msg("Error while publishing event")
-			err = messageService.MarkAsCreated(item.ID)
+			err = w.messageService.MarkAsCreated(item.ID)
 			if err != nil {
 				log.Err(err).
 					Msg("Error while marking as created")
@@ -102,7 +79,7 @@ func (s scheduler) fetchMessages() (*[]message.DTO, error) {
 	return &itemsToSend, nil
 }
 
-func (s scheduler) doSendMessage(item *message.DTO) {
+func (w sendMessageWorker) doSendMessage(item *message.DTO) {
 	log.Info().
 		Msgf("Sending message to %s with content %s with id %d", item.PhoneNumber, item.Message, item.ID)
 
@@ -114,19 +91,15 @@ func (s scheduler) doSendMessage(item *message.DTO) {
 	if err != nil {
 		log.Err(err).
 			Msgf("Error while sending message to %s with content %s with id %d", inputItem.PhoneNumber, inputItem.Message, item.ID)
-		err = messageService.MarkAsFailed(item.ID)
+		err = w.messageService.MarkAsFailed(item.ID)
 	} else {
 		log.Info().
 			Msgf("Message sent to %s with content %s with id %d tracked by %s", inputItem.PhoneNumber, inputItem.Message, item.ID, response.MessageId)
-		err = messageService.MarkAsSent(item.ID, response.MessageId, messageProvider.Type())
+		err = w.messageService.MarkAsSent(item.ID, response.MessageId, messageProvider.Type())
 	}
 
 	if err != nil {
 		log.Err(err).
 			Msgf("Error while marking message with id %d", item.ID)
 	}
-}
-
-func (s scheduler) Stop() {
-	close(schedulerInstance.stop)
 }

@@ -4,28 +4,32 @@ import (
 	"github.com/go-chi/chi/v5"
 	"insider/graceful_shutdown"
 	"insider/message"
-	"insider/rabbitmq"
-	"sync"
+	"insider/scheduler"
 )
 
 var (
-	schedulerInstance *scheduler
-	connectionOnce    sync.Once
-	messageService    message.UnsentMessageService
-	publisher         *rabbitmq.Publisher
+	manager *scheduler.Manager
+	worker  *sendMessageWorker
 )
 
 func Configure(mux *chi.Mux) {
-	connectionOnce.Do(func() {
-		schedulerInstance = newScheduler()
-		configureRabbitMQ()
-		graceful_shutdown.AddShutdownHook(func() {
-			schedulerInstance.Stop()
-		})
+	declareDelayedMessageQueue()
+
+	publisher := createDefaultExchangePublisher()
+
+	worker = newSendMessageWorker(
+		publisher,
+		message.GetUnsentMessageService(),
+	)
+
+	manager = scheduler.NewManager(worker.doRun)
+
+	graceful_shutdown.AddShutdownHook(func() {
+		manager.Stop()
 	})
 
-	handlerInstance := newHandler()
+	handlerInstance := newHandler(manager)
 
-	mux.Get("/messages", handlerInstance.Start)
-	mux.Post("/messages", handlerInstance.Stop)
+	mux.Put("/sender/start", handlerInstance.Start)
+	mux.Put("/sender/stop", handlerInstance.Stop)
 }
