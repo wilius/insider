@@ -4,11 +4,8 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"io"
 )
 
 var aesBlock cipher.Block
@@ -19,42 +16,6 @@ func init() {
 	if err != nil {
 		panic(fmt.Sprintf("Failed to create AES cipher: %v", err))
 	}
-}
-
-func EncryptPEB(text *string) (*string, error) {
-	plaintext := []byte(*text)
-	ciphertext := make([]byte, aes.BlockSize+len(plaintext))
-	iv := ciphertext[:aes.BlockSize]
-
-	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
-		return nil, err
-	}
-
-	stream := cipher.NewCFBEncrypter(aesBlock, iv)
-	stream.XORKeyStream(ciphertext[aes.BlockSize:], plaintext)
-
-	toString := base64.URLEncoding.EncodeToString(ciphertext)
-	return &toString, nil
-}
-
-func DecryptPEB(text *string) (*[]byte, error) {
-	ciphertext, err := base64.URLEncoding.DecodeString(*text)
-	if err != nil {
-		fmt.Printf("%s", err.Error())
-		return nil, err
-	}
-
-	if len(ciphertext) < aes.BlockSize {
-		return nil, fmt.Errorf("ciphertext too short")
-	}
-
-	iv := ciphertext[:aes.BlockSize]
-	ciphertext = ciphertext[aes.BlockSize:]
-
-	stream := cipher.NewCFBDecrypter(aesBlock, iv)
-	stream.XORKeyStream(ciphertext, ciphertext)
-
-	return &ciphertext, nil
 }
 
 func Encrypt(text *string) (*string, error) {

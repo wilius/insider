@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// dtoStatus added here to have a flexibility between internal status mapping and outfaced exposed statuses
 var dtoStatus = struct {
 	Created constants.MessageStatus
 	Sending constants.MessageStatus
@@ -29,8 +30,9 @@ func (s *createRequest) Bind(_ *http.Request) error {
 	return util.Validate(s)
 }
 
+// HttpDTO created for transmit message data over http
 type HttpDTO struct {
-	ID          types.EntityId          `json:"id"`
+	ID          *types.EntityId         `json:"id"`
 	PhoneNumber string                  `json:"phoneNumber"`
 	Message     string                  `json:"message"`
 	Status      constants.MessageStatus `json:"status"`
@@ -38,6 +40,7 @@ type HttpDTO struct {
 	UpdateDate  *time.Time              `json:"updateDate"`
 }
 
+// DTO created for inter-package message data sharing
 type DTO struct {
 	ID          int64
 	PhoneNumber string

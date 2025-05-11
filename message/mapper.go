@@ -15,9 +15,7 @@ func mapToHttpDTO(item *entity) (*HttpDTO, error) {
 	}
 
 	d := &HttpDTO{
-		ID: types.EntityId{
-			Id: item.ID,
-		},
+		ID:          types.MapEntityId(&item.ID),
 		PhoneNumber: item.PhoneNumber,
 		Message:     item.Message,
 		Status:      *status,

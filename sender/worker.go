@@ -29,7 +29,7 @@ func newSendMessageWorker(
 	}
 }
 
-func (w sendMessageWorker) doRun() {
+func (w *sendMessageWorker) doRun() {
 	log.Info().
 		Msg("Running scheduler")
 
@@ -43,7 +43,7 @@ func (w sendMessageWorker) doRun() {
 	}
 }
 
-func (w sendMessageWorker) fetchMessages() (*[]message.DTO, error) {
+func (w *sendMessageWorker) fetchMessages() (*[]message.DTO, error) {
 	tx := database.Instance().Begin()
 	count := configs.Instance().
 		GetScheduler().
@@ -79,7 +79,7 @@ func (w sendMessageWorker) fetchMessages() (*[]message.DTO, error) {
 	return &itemsToSend, nil
 }
 
-func (w sendMessageWorker) doSendMessage(item *message.DTO) {
+func (w *sendMessageWorker) doSendMessage(item *message.DTO) {
 	log.Info().
 		Msgf("Sending message to %s with content %s with id %d", item.PhoneNumber, item.Message, item.ID)
 

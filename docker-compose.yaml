@@ -20,7 +20,7 @@ services:
 
   webhook:
     build:
-      context: docker_files/python
+      context: test_files/docker/python
     init: true
     pull_policy: "build"
     environment:

@@ -36,11 +36,11 @@ func newDelayedCheckConsumer(messageService message.UnsentMessageService) *delay
 	return consumer
 }
 
-func (c delayedCheckConsumer) Start(consumer *rabbitmq.Consumer) {
+func (c *delayedCheckConsumer) Start(consumer *rabbitmq.Consumer) {
 	go c.doStart(consumer)
 }
 
-func (c delayedCheckConsumer) doStart(consumer *rabbitmq.Consumer) {
+func (c *delayedCheckConsumer) doStart(consumer *rabbitmq.Consumer) {
 	err := consumer.Run(func(d rabbitmq.Delivery) rabbitmq.Action {
 		event := eventDto{}
 		if err := json.Unmarshal(d.Body, &event); err != nil {
@@ -64,7 +64,7 @@ func (c delayedCheckConsumer) doStart(consumer *rabbitmq.Consumer) {
 	}
 }
 
-func (c delayedCheckConsumer) doHandleCheckingMessage(event *eventDto) error {
+func (c *delayedCheckConsumer) doHandleCheckingMessage(event *eventDto) error {
 	log.Info().
 		Msgf("Received message with ID: %d", event.Id)
 

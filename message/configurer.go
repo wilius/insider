@@ -3,28 +3,36 @@ package message
 import (
 	"github.com/go-chi/chi/v5"
 	"insider/database"
+	"sync"
 )
 
-var repo *repository
-var service *dataService
+var (
+	repo    *repository
+	service *dataService
+	once    sync.Once
+)
 
 func GetUnsentMessageService() UnsentMessageService {
-	if service == nil {
-		panic("service not initialized yet")
-	}
+	configureService()
 
 	return service
 }
 
 func Configure(mux *chi.Mux) {
-	repo = newRepository(
-		database.Instance(),
-	)
-
-	service = newDataServices(repo)
+	configureService()
 
 	handler := newHandler(service)
 
 	mux.Get("/messages", handler.List)
 	mux.Post("/messages", handler.Create)
+}
+
+func configureService() {
+	once.Do(func() {
+		repo = newRepository(
+			database.Instance(),
+		)
+
+		service = newDataServices(repo)
+	})
 }

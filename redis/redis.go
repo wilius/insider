@@ -14,12 +14,16 @@ var (
 
 func Instance() *redis.Client {
 	connectionOnce.Do(func() {
-		redisConfig := configs.Instance().
-			GetRedis()
-		instance = redis.NewClient(&redis.Options{
-			Addr: fmt.Sprintf("%s:%d", redisConfig.GetHost(), redisConfig.GetPort()),
-		})
+		instance = createInstance()
 	})
 
 	return instance
+}
+
+func createInstance() *redis.Client {
+	redisConfig := configs.Instance().
+		GetRedis()
+	return redis.NewClient(&redis.Options{
+		Addr: fmt.Sprintf("%s:%d", redisConfig.GetHost(), redisConfig.GetPort()),
+	})
 }

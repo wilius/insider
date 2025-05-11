@@ -21,14 +21,20 @@ func (*entity) TableName() string {
 	return "notifications.message"
 }
 
-func (c *entity) BeforeCreate(tx *gorm.DB) (err error) {
+func (e *entity) BeforeCreate(tx *gorm.DB) (err error) {
 	var nextID int64
 	err = tx.Raw("SELECT nextval('notifications.seq__message_id')").Scan(&nextID).Error
 	if err != nil {
 		return err
 	}
-	c.ID = nextID
+	e.ID = nextID
 	now := time.Now().UTC()
-	c.CreateDate = now
+	e.CreateDate = now
+	return nil
+}
+
+func (e *entity) BeforeUpdate(_ *gorm.DB) (err error) {
+	now := time.Now().UTC()
+	e.UpdateDate = &now
 	return nil
 }

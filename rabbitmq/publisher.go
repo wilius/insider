@@ -37,7 +37,7 @@ func NewPublisher(
 	}, nil
 }
 
-func (p Publisher) PublishEvent(
+func (p *Publisher) PublishEvent(
 	object interface{},
 	routingKey string,
 ) error {

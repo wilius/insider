@@ -33,7 +33,7 @@ func providerConfigFactory(data *map[string]interface{}) (ProviderConfig, error)
 
 	decoderConfig := &mapstructure.DecoderConfig{
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			stringToDurationHook(),
+			stringToDurationParserHook(),
 		),
 		Result:           &provider,
 		TagName:          "mapstructure",

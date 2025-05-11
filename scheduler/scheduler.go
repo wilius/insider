@@ -11,11 +11,11 @@ type scheduler struct {
 	stop     chan struct{}
 }
 
-func (s scheduler) Start() {
+func (s *scheduler) Start() {
 	go s.doStart()
 }
 
-func (s scheduler) doStart() {
+func (s *scheduler) doStart() {
 	s.worker()
 	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()
@@ -34,6 +34,6 @@ func (s scheduler) doStart() {
 	}
 }
 
-func (s scheduler) Stop() {
+func (s *scheduler) Stop() {
 	close(s.stop)
 }

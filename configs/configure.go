@@ -14,8 +14,12 @@ import (
 
 var instance Config
 
+func Instance() Config {
+	return instance
+}
+
 func init() {
-	out := renderConfig()
+	out := renderConfigTemplate()
 
 	viper.SetConfigType("yaml")
 	if err := viper.ReadConfig(bytes.NewBuffer((*out).Bytes())); err != nil {
@@ -25,7 +29,7 @@ func init() {
 	var config configImp
 	decoderConfig := &mapstructure.DecoderConfig{
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			stringToDurationHook(),
+			stringToDurationParserHook(),
 		),
 		Result:           &config,
 		TagName:          "mapstructure",
@@ -41,11 +45,11 @@ func init() {
 		panic(fmt.Errorf("unable to decode into struct: %w", err))
 	}
 
-	config.Provider = readProviderConfig()
+	config.Provider = readInjectedProviderConfig()
 	instance = config
 }
 
-func readProviderConfig() ProviderConfig {
+func readInjectedProviderConfig() ProviderConfig {
 	providerConfigMap := viper.GetStringMap("provider")
 	providerConfig, err := providerConfigFactory(&providerConfigMap)
 	if err != nil {
@@ -54,7 +58,7 @@ func readProviderConfig() ProviderConfig {
 	return providerConfig
 }
 
-func renderConfig() *bytes.Buffer {
+func renderConfigTemplate() *bytes.Buffer {
 	configData, err := os.ReadFile("config.yaml")
 	if err != nil {
 		panic(fmt.Errorf("fatal error reading config file: %w", err))
@@ -63,7 +67,7 @@ func renderConfig() *bytes.Buffer {
 	tmpl, err := template.New("config").
 		Option("missingkey=zero").
 		Funcs(template.FuncMap{
-			"default": defaultFunc,
+			"default": templateDefaultFunction,
 		}).
 		Parse(string(configData))
 
@@ -71,7 +75,7 @@ func renderConfig() *bytes.Buffer {
 		panic(fmt.Errorf("template parsing error: %w", err))
 	}
 
-	env := loadEnvVars()
+	env := parseTemplateEnvironmentVariables()
 
 	var out bytes.Buffer
 	if err := tmpl.Execute(&out, env); err != nil {
@@ -81,18 +85,14 @@ func renderConfig() *bytes.Buffer {
 	return &out
 }
 
-func Instance() Config {
-	return instance
-}
-
-func defaultFunc(value, defaultVal interface{}) interface{} {
+func templateDefaultFunction(value, defaultVal interface{}) interface{} {
 	if value == nil || value == "" {
 		return defaultVal
 	}
 	return value
 }
 
-func loadEnvVars() map[string]string {
+func parseTemplateEnvironmentVariables() map[string]string {
 	envMap := make(map[string]string)
 	for _, env := range os.Environ() {
 		parts := strings.SplitN(env, "=", 2)
@@ -103,14 +103,13 @@ func loadEnvVars() map[string]string {
 	return envMap
 }
 
-func stringToDurationHook() mapstructure.DecodeHookFuncType {
+func stringToDurationParserHook() mapstructure.DecodeHookFuncType {
 	return func(
 		from reflect.Type,
 		to reflect.Type,
 		data interface{},
 	) (interface{}, error) {
 		if from.Kind() == reflect.String && to == reflect.TypeOf(time.Duration(0)) {
-			// Try to parse the string as time.Duration
 			return time.ParseDuration(data.(string))
 		}
 		return data, nil
